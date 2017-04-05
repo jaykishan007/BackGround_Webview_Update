@@ -46,8 +46,11 @@ public class MainActivity extends AppCompatActivity {
 
                 Log.v(LOG_TAG, (String) imageView.getContentDescription());
 
+
+                //Fetch Content Descriptionn and put as an Extra Intent
                 Intent intent=new Intent(getApplicationContext(),WebViewActivity.class);
                 intent.putExtra(Intent.ACTION_MAIN,imageView.getContentDescription());
+                intent.putExtra("webViewName","webview1");
                 startActivity(intent);
 
             }
@@ -61,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
 
     //Checks the Network connectivity Service of System
     public static boolean hasActiveInternetConnection(Context context) {
@@ -77,6 +81,8 @@ public class MainActivity extends AppCompatActivity {
     {
 
         if(hasActiveInternetConnection(this)) {
+
+            //Execute BackEnd Thread as Network Connectivity cannot be made in the main Thread
             Log.v(LOG_TAG,"Internet Connected");
             new FetchAPI().execute(api);
 
@@ -97,6 +103,8 @@ public class MainActivity extends AppCompatActivity {
         private final String LOG_TAG = FetchAPI.class.getSimpleName();
 
 
+
+        //Returns the String array containing Page URL and Image URL
         private String[] getDataFromJson(String jsonStr)
                 throws JSONException {
 
@@ -130,13 +138,14 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String[] strings) {
 
-            // todo: save back the url to shared preferences
+            // Using Picasso library to set imageView to fetched URL
 
             com.squareup.picasso.Picasso.with(MainActivity.this).
                     load(strings[1]).
                     placeholder(R.mipmap.ic_launcher).
                     into(imageView);
 
+            //Setting Image Content Description to page URL
             imageView.setContentDescription(strings[0]);
 
             progressBar.setVisibility(View.GONE);

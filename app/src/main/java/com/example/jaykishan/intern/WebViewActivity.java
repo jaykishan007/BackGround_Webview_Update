@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.ResultReceiver;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -16,48 +19,50 @@ import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 public class WebViewActivity extends AppCompatActivity {
 
     private WebView webView;
     private String webUrl;
+    private Toast showToastMessage;
+    private Bundle webViewBundle;
+    private RelativeLayout layout;
 
     private String cacheDir;
 
     private ProgressBar progress;
 
     private final String LOG_TAG = WebViewActivity.class.getSimpleName();
+    private Handler handler = new Handler();
+    private Intent intentservice;
+    MyResultReceiver resultReceiver;
+    private String webViewName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_web_view);
 
+        layout=(RelativeLayout)findViewById(R.id.webViewLayout);
+
         Intent intent=getIntent();
+
+        //get the extras which in this case is page URL to be loaded upon cliking the thumbnail(Image)
         webUrl=intent.getStringExtra(Intent.ACTION_MAIN);
-
-        Log.v(LOG_TAG,webUrl);
-
-
+        webViewName=intent.getStringExtra("webViewName");
 
         progress=(ProgressBar) findViewById(R.id.progressBar2);
         progress.setMax(100);
 
 
         webView=(WebView) findViewById(R.id.webview);
+
+        //Initializes WebView
         init();
 
-        if(MainActivity.hasActiveInternetConnection(WebViewActivity.this)) {
-            Log.v(LOG_TAG,"Has Internet");
-            webView.getSettings().setCacheMode(WebSettings.LOAD_DEFAULT);
-
-        }
-        else
-        {
-            Log.v(LOG_TAG,"No Internet");
-            webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
-        }
+        webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 
         webView.loadUrl("https://www.youtube.com");
 
@@ -65,7 +70,7 @@ public class WebViewActivity extends AppCompatActivity {
 
     private void init() {
 
-        String cacheDir = getDir("webview1", Context.MODE_PRIVATE).getAbsolutePath();
+        String cacheDir = getDir(webViewName, Context.MODE_PRIVATE).getAbsolutePath();
 
 
         webView.getSettings().setLoadsImagesAutomatically(true);
@@ -76,8 +81,6 @@ public class WebViewActivity extends AppCompatActivity {
         // Set cache size to 8 mb by default. should be more than enough
         webView.getSettings().setAppCacheMaxSize(1024*1024*10);
 
-        // UPDATE: no hardcoded path. Thanks to Kevin Hawkins
-        String appCachePath = getApplicationContext().getCacheDir().getAbsolutePath();
         Log.e(LOG_TAG, "appCachePath = " + cacheDir);
         webView.getSettings().setAppCachePath(cacheDir);
         webView.getSettings().setAllowFileAccess(true);
@@ -87,6 +90,48 @@ public class WebViewActivity extends AppCompatActivity {
         webView.setWebViewClient(new MyBrowser());
 
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        if(showToastMessage!=null)
+            showToastMessage.cancel();
+
+        if(MainActivity.hasActiveInternetConnection(this))
+        {
+
+            webViewBundle= new Bundle();
+            webView.saveState(webViewBundle);
+
+            resultReceiver = new MyResultReceiver(handler);
+
+            intentservice = new Intent(this, WebViewService.class);
+            intentservice.putExtra("receiver",resultReceiver);
+            intentservice.putExtra("weburl",webUrl);
+            intentservice.putExtra("bundle",webViewBundle);
+
+            startService(intentservice);
+
+        }
+
+
+
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+            stopService(intentservice);
     }
 
     @Override
@@ -121,9 +166,8 @@ public class WebViewActivity extends AppCompatActivity {
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             super.onReceivedError(view, request, error);
 
-            Toast.makeText(WebViewActivity.this, "Check Internet Connection "+ error, Toast.LENGTH_LONG).show();
-
-
+            showToastMessage = Toast.makeText(WebViewActivity.this, "Check Internet Connection", Toast.LENGTH_SHORT);
+            showToastMessage.show();
 
         }
 
@@ -168,6 +212,36 @@ public class WebViewActivity extends AppCompatActivity {
     }
 
 
+
+    class MyResultReceiver extends ResultReceiver {
+        public MyResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(final int resultCode, final Bundle resultData) {
+
+            Snackbar snackbar = Snackbar
+                    .make(layout, "Fresh Content Available", Snackbar.LENGTH_LONG)
+                    .setAction("Reload", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+
+                            if(resultCode==100)
+                            {
+                                webView.restoreState(resultData);
+                            }
+
+
+                        }
+                    });
+
+            snackbar.show();
+
+
+        }
+
+    }
 
 
 }
