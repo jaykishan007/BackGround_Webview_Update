@@ -30,16 +30,18 @@ public class WebViewService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-
+        Log.v(LOG_TAG,"Service called");
         updatedWebView = new WebView(this);
 
         resultReceiver = intent.getParcelableExtra("receiver");
         webUrl=intent.getStringExtra("weburl");
+
+        Log.v(LOG_TAG,webUrl);
         Bundle bun= intent.getParcelableExtra("bundle");
 
         updatedWebView.restoreState(bun);
         updatedWebView.setWebViewClient(new MyBrowser());
-        updatedWebView.reload();
+        updatedWebView.loadUrl("http://stackoverflow.com/questions/21797401/how-to-avoid-adding-duplicate-values-in-shared-prefernces-in-android");
 
 
         return super.onStartCommand(intent, flags, startId);
