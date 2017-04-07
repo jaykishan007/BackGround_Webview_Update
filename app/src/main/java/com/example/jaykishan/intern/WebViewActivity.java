@@ -71,7 +71,7 @@ public class WebViewActivity extends AppCompatActivity {
 
         webView=(WebView) findViewById(R.id.webview);
         //Initializes WebView
-        init();
+        init(webView);
 
         webViewCacheMode();
 
@@ -119,24 +119,24 @@ public class WebViewActivity extends AppCompatActivity {
 
     }
 
-    private void init() {
+    private void init(WebView web) {
 
         cacheDir = getDir(webViewName, Context.MODE_PRIVATE).getAbsolutePath();
 
 
-        webView.getSettings().setLoadsImagesAutomatically(true);
-        webView.getSettings().setDomStorageEnabled(true);
-        webView.getSettings().setAppCacheEnabled(true);
-        webView.setWebChromeClient(new AppCacheWebChromeClient());
-        webView.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
+        web.getSettings().setLoadsImagesAutomatically(true);
+        web.getSettings().setDomStorageEnabled(true);
+        web.getSettings().setAppCacheEnabled(true);
+        web.setWebChromeClient(new AppCacheWebChromeClient());
+        web.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
         // Set cache size to 8 mb by default. should be more than enough
-        webView.getSettings().setAppCacheMaxSize(1024*1024*10);
-        webView.getSettings().setAppCachePath(cacheDir);
-        webView.getSettings().setAllowFileAccess(true);
+        web.getSettings().setAppCacheMaxSize(1024*1024*10);
+        web.getSettings().setAppCachePath(cacheDir);
+        web.getSettings().setAllowFileAccess(true);
 
-        webView.getSettings().setJavaScriptEnabled(true);
+        web.getSettings().setJavaScriptEnabled(true);
 
-        webView.setWebViewClient(new MyBrowser());
+        web.setWebViewClient(new MyBrowser());
 
 
     }
@@ -276,6 +276,8 @@ public class WebViewActivity extends AppCompatActivity {
                                 webView.setVisibility(View.INVISIBLE);
                                 webView.clearCache(true);
 
+
+                                init(duplicateWebView);
                                 duplicateWebView.getSettings().setAppCachePath(cacheDir);
                                 duplicateWebView.restoreState(resultData);
                                 duplicateWebView.setVisibility(View.VISIBLE);
