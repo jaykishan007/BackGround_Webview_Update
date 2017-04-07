@@ -1,5 +1,6 @@
 package com.example.jaykishan.intern;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -28,7 +29,6 @@ public class WebViewActivity extends AppCompatActivity {
     private WebView webView,duplicateWebView;
     private String webUrl;
     private Toast showToastMessage;
-    private Bundle webViewBundle;
     private RelativeLayout layout;
     private Context context;
 
@@ -36,7 +36,7 @@ public class WebViewActivity extends AppCompatActivity {
 
     private ProgressBar progress;
 
-    private final String LOG_TAG = WebViewActivity.class.getSimpleName();
+    private final String LOG_TAG = "WebView";
     private Handler handler = new Handler();
     private Intent intentservice;
     MyResultReceiver resultReceiver;
@@ -75,6 +75,8 @@ public class WebViewActivity extends AppCompatActivity {
 
         webViewCacheMode();
 
+        Log.v(LOG_TAG,sharedPreferences.getString("load",""));
+
         webView.loadUrl(sharedPreferences.getString("load",""));
 
     }
@@ -86,13 +88,15 @@ public class WebViewActivity extends AppCompatActivity {
             webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
             enableBackgroundService();
 
-            Log.v(LOG_TAG,"Cache Alredy");
+            Log.v(LOG_TAG,"Cache Already");
 
         }
         else
         {
             webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
             editor.putString("load","https://www.youtube.com");
+            editor.putString(webViewName,"Exists");
+            editor.commit();
             Log.v(LOG_TAG,"FirstTime");
         }
 
@@ -102,15 +106,11 @@ public class WebViewActivity extends AppCompatActivity {
     private void enableBackgroundService()
     {
 
-        webViewBundle= new Bundle();
-        webView.saveState(webViewBundle);
-
         resultReceiver = new MyResultReceiver(handler);
 
         intentservice = new Intent(context, WebViewService.class);
         intentservice.putExtra("receiver",resultReceiver);
         intentservice.putExtra("weburl",webUrl);
-        intentservice.putExtra("bundle",webViewBundle);
 
         Log.v(LOG_TAG,"service yet to be called");
         startService(intentservice);
@@ -121,7 +121,7 @@ public class WebViewActivity extends AppCompatActivity {
 
     private void init() {
 
-        String cacheDir = getDir(webViewName, Context.MODE_PRIVATE).getAbsolutePath();
+        cacheDir = getDir(webViewName, Context.MODE_PRIVATE).getAbsolutePath();
 
 
         webView.getSettings().setLoadsImagesAutomatically(true);
@@ -161,18 +161,21 @@ public class WebViewActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
 
-        if(sharedPreferences.contains(webViewName))
+        if(isMyServiceRunning(WebViewService.class))
         {
             stopService(intentservice);
         }
-        else
-        {
 
-            editor.putString(webViewName,"Exists");
-            editor.commit();
+    }
 
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
         }
-
+        return false;
     }
 
     @Override
@@ -272,13 +275,13 @@ public class WebViewActivity extends AppCompatActivity {
                             {
                                 webView.setVisibility(View.INVISIBLE);
                                 webView.clearCache(true);
+
+                                duplicateWebView.getSettings().setAppCachePath(cacheDir);
                                 duplicateWebView.restoreState(resultData);
                                 duplicateWebView.setVisibility(View.VISIBLE);
 
                                 editor.putString("load","http://stackoverflow.com/questions/21797401/how-to-avoid-adding-duplicate-values-in-shared-prefernces-in-android");
-                                String cacheDir = getDir(webViewName, Context.MODE_PRIVATE).getAbsolutePath();
-                                duplicateWebView.getSettings().setAppCachePath(cacheDir);
-                                editor.remove(webViewName);
+                                editor.commit();
 
                             }
 
