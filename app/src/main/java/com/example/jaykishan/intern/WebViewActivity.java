@@ -25,7 +25,7 @@ import android.widget.Toast;
 
 public class WebViewActivity extends AppCompatActivity {
 
-    private WebView webView;
+    private WebView webView,duplicateWebView;
     private String webUrl;
     private Toast showToastMessage;
     private Bundle webViewBundle;
@@ -50,8 +50,14 @@ public class WebViewActivity extends AppCompatActivity {
         setContentView(R.layout.activity_web_view);
         context = getApplicationContext();
 
+        duplicateWebView = (WebView)findViewById(R.id.webviewDup);
+
+
+
         sharedPreferences = getSharedPreferences("ThumbnailCache",MODE_PRIVATE);
         editor = sharedPreferences.edit();
+
+
 
         layout=(RelativeLayout)findViewById(R.id.webViewLayout);//To pass layout to Snackbar as attribute
 
@@ -69,7 +75,7 @@ public class WebViewActivity extends AppCompatActivity {
 
         webViewCacheMode();
 
-        webView.loadUrl("https://www.youtube.com");
+        webView.loadUrl(sharedPreferences.getString("load",""));
 
     }
 
@@ -80,14 +86,13 @@ public class WebViewActivity extends AppCompatActivity {
             webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
             enableBackgroundService();
 
-
             Log.v(LOG_TAG,"Cache Alredy");
 
         }
         else
         {
             webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-
+            editor.putString("load","https://www.youtube.com");
             Log.v(LOG_TAG,"FirstTime");
         }
 
@@ -265,10 +270,17 @@ public class WebViewActivity extends AppCompatActivity {
 
                             if(resultCode==100)
                             {
-                                webView.loadUrl("about:blank");
-                                webView.restoreState(resultData);
-                            }
+                                webView.setVisibility(View.INVISIBLE);
+                                webView.clearCache(true);
+                                duplicateWebView.restoreState(resultData);
+                                duplicateWebView.setVisibility(View.VISIBLE);
 
+                                editor.putString("load","http://stackoverflow.com/questions/21797401/how-to-avoid-adding-duplicate-values-in-shared-prefernces-in-android");
+                                String cacheDir = getDir(webViewName, Context.MODE_PRIVATE).getAbsolutePath();
+                                duplicateWebView.getSettings().setAppCachePath(cacheDir);
+                                editor.remove(webViewName);
+
+                            }
 
                         }
                     });

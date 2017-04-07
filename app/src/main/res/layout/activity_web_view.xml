@@ -19,6 +19,14 @@
         />
 
 
+    <WebView
+        android:id="@+id/webviewDup"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        />
+
+
     <ProgressBar
         android:id="@+id/progressBar2"
         android:minHeight="2dip"

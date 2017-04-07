@@ -39,7 +39,6 @@ public class WebViewService extends Service {
         Log.v(LOG_TAG,webUrl);
         Bundle bun= intent.getParcelableExtra("bundle");
 
-        updatedWebView.restoreState(bun);
         updatedWebView.setWebViewClient(new MyBrowser());
         updatedWebView.loadUrl("http://stackoverflow.com/questions/21797401/how-to-avoid-adding-duplicate-values-in-shared-prefernces-in-android");
 
