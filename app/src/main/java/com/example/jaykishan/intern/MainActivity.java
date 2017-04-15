@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
                 //Fetch Content Descriptionn and put as an Extra Intent
                 Intent intent=new Intent(getApplicationContext(),WebViewActivity.class);
                 intent.putExtra(Intent.ACTION_MAIN,imageView.getContentDescription());
-                intent.putExtra("webViewName","webview1");
+                intent.putExtra(getString(R.string.webViewName),getString(R.string.thumbNail1));
                 startActivity(intent);
 
             }

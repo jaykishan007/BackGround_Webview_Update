@@ -40,7 +40,7 @@ public class WebViewActivity extends AppCompatActivity {
     private Handler handler = new Handler();
     private Intent intentservice;
     MyResultReceiver resultReceiver;
-    private String webViewName;
+    private String thumbNailClicked;
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
 
@@ -50,31 +50,38 @@ public class WebViewActivity extends AppCompatActivity {
         setContentView(R.layout.activity_web_view);
         context = getApplicationContext();
 
+        //webview initially that loads cache content if available
+        webView=(WebView) findViewById(R.id.webview);
+
+        //Duplicate layout to load fresh content when loaded in background
         duplicateWebView = (WebView)findViewById(R.id.webviewDup);
 
+        //To pass layout to Snackbar as attribute
+        layout=(RelativeLayout)findViewById(R.id.webViewLayout);
 
-
-        sharedPreferences = getSharedPreferences("ThumbnailCache",MODE_PRIVATE);
-        editor = sharedPreferences.edit();
-
-
-
-        layout=(RelativeLayout)findViewById(R.id.webViewLayout);//To pass layout to Snackbar as attribute
-
-        Intent intent=getIntent();//Get intent object
+        //Get intent object
+        Intent intent=getIntent();
         //get the extras which in this case is page URL to be loaded upon cliking the thumbnail(Image)
         webUrl=intent.getStringExtra(Intent.ACTION_MAIN);
-        webViewName=intent.getStringExtra("webViewName");
+
+
+        thumbNailClicked=intent.getStringExtra(String.valueOf(R.string.webViewName));
+
+
+        sharedPreferences = getSharedPreferences(thumbNailClicked,MODE_PRIVATE);
+        editor = sharedPreferences.edit();
+
 
         progress=(ProgressBar) findViewById(R.id.progressBar2);
         progress.setMax(100);
 
-        webView=(WebView) findViewById(R.id.webview);
+
         //Initializes WebView
         init(webView);
 
         webViewCacheMode();
 
+        Log.v(LOG_TAG,"noew");
         Log.v(LOG_TAG,sharedPreferences.getString("load",""));
 
         webView.loadUrl(sharedPreferences.getString("load",""));
@@ -83,7 +90,7 @@ public class WebViewActivity extends AppCompatActivity {
 
     private void webViewCacheMode()
     {
-        if(sharedPreferences.contains(webViewName))
+        if(sharedPreferences.contains("cached"))
         {
             webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
             enableBackgroundService();
@@ -94,10 +101,11 @@ public class WebViewActivity extends AppCompatActivity {
         else
         {
             webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-            editor.putString("load","https://www.youtube.com");
-            editor.putString(webViewName,"Exists");
+            Log.v(LOG_TAG,"cache Doesnt Exist");
+            editor.putString("load","http://www.amazon.in/");
+            editor.putString("cached","Exists");
             editor.commit();
-            Log.v(LOG_TAG,"FirstTime");
+            Log.v(LOG_TAG,"not yet");
         }
 
 
@@ -111,6 +119,8 @@ public class WebViewActivity extends AppCompatActivity {
         intentservice = new Intent(context, WebViewService.class);
         intentservice.putExtra("receiver",resultReceiver);
         intentservice.putExtra("weburl",webUrl);
+        intentservice.putExtra("cachePath",cacheDir);
+        intentservice.putExtra("thumbnailClicked",thumbNailClicked);
 
         Log.v(LOG_TAG,"service yet to be called");
         startService(intentservice);
@@ -121,7 +131,7 @@ public class WebViewActivity extends AppCompatActivity {
 
     private void init(WebView web) {
 
-        cacheDir = getDir(webViewName, Context.MODE_PRIVATE).getAbsolutePath();
+        cacheDir = getDir(thumbNailClicked, Context.MODE_PRIVATE).getAbsolutePath();
 
 
         web.getSettings().setLoadsImagesAutomatically(true);
@@ -209,9 +219,9 @@ public class WebViewActivity extends AppCompatActivity {
         @Override
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             super.onReceivedError(view, request, error);
-
-            showToastMessage = Toast.makeText(WebViewActivity.this, error.toString(), Toast.LENGTH_SHORT);
-            showToastMessage.show();
+//
+//            showToastMessage = Toast.makeText(WebViewActivity.this, error.toString(), Toast.LENGTH_SHORT);
+//            showToastMessage.show();
 
         }
 
@@ -266,29 +276,32 @@ public class WebViewActivity extends AppCompatActivity {
         protected void onReceiveResult(final int resultCode, final Bundle resultData) {
 
             Snackbar snackbar = Snackbar
-                    .make(layout, "Fresh Content Available", Snackbar.LENGTH_LONG)
+                    .make(layout, "Fresh Content Available", Snackbar.LENGTH_INDEFINITE)
                     .setAction("Reload", new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
 
                             if(resultCode==100)
                             {
-                                webView.setVisibility(View.INVISIBLE);
-                                webView.clearCache(true);
+//                                webView.clearCache(true);
 
+//                                duplicateWebView.restoreState(resultData);
+
+                                webView.setVisibility(View.INVISIBLE);
 
                                 init(duplicateWebView);
-                                duplicateWebView.getSettings().setAppCachePath(cacheDir);
-                                duplicateWebView.restoreState(resultData);
+                                duplicateWebView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
+
+                                duplicateWebView.loadUrl(sharedPreferences.getString("load",""));
+
                                 duplicateWebView.setVisibility(View.VISIBLE);
 
-                                editor.putString("load","http://stackoverflow.com/questions/21797401/how-to-avoid-adding-duplicate-values-in-shared-prefernces-in-android");
-                                editor.commit();
 
                             }
 
                         }
                     });
+
 
             snackbar.show();
 

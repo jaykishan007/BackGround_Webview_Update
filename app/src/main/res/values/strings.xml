@@ -3,4 +3,14 @@
 
     <string name="result_receiver">ResultReceiver</string>
 
+    <!--key to get thumbnail ID-->
+    <string name="webViewName">webViewName</string>
+
+
+    <!--kind of ID for thumbnail to check which one was clicked-->
+    <string name="thumbNail1">Source1</string>
+
+    <string name="sourceClicked">thumbnailSource</string>
+
+
 </resources>
