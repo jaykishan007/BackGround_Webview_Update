@@ -1,8 +1,10 @@
 package com.example.jaykishan.intern;
 
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
@@ -32,6 +34,9 @@ public class WebViewActivity extends AppCompatActivity {
     private RelativeLayout layout;
     private Context context;
 
+    private BroadcastReceiver receiver;
+
+
     private String cacheDir;
 
     private ProgressBar progress;
@@ -43,6 +48,9 @@ public class WebViewActivity extends AppCompatActivity {
     private String thumbNailClicked;
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
+
+    public WebViewActivity() {
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,11 +89,39 @@ public class WebViewActivity extends AppCompatActivity {
 
         webViewCacheMode();
 
-        Log.v(LOG_TAG,"noew");
-        Log.v(LOG_TAG,sharedPreferences.getString("load",""));
 
         webView.loadUrl(sharedPreferences.getString("load",""));
 
+    }
+
+    private void registerNetworkReceiver()
+    {
+        String net = "android.net.conn.CONNECTIVITY_CHANGE";
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(net);
+
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+
+                Log.v(LOG_TAG,"Broad caster");
+
+                if(MainActivity.hasActiveInternetConnection(context))
+                {
+                    enableBackgroundService();
+                    Log.v(LOG_TAG,"Network presetnt Broadcast");
+                }
+                else
+                {
+                    Log.v(LOG_TAG,"Network not present Broadcast");
+                }
+
+
+            }
+        };
+        registerReceiver(receiver, filter);
     }
 
     private void webViewCacheMode()
@@ -93,7 +129,20 @@ public class WebViewActivity extends AppCompatActivity {
         if(sharedPreferences.contains("cached"))
         {
             webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
-            enableBackgroundService();
+
+            // Register and tried to listen to broadcast of network changes
+            registerNetworkReceiver();
+
+//            if(MainActivity.hasActiveInternetConnection(this))
+//            {
+//                enableBackgroundService();
+//                Log.v(LOG_TAG,"NetConnected");
+//            }
+//            else
+//            {
+//                Toast.makeText(WebViewActivity.this, "Oops..Check Network", Toast.LENGTH_SHORT).show();
+//            }
+
 
             Log.v(LOG_TAG,"Cache Already");
 
@@ -105,13 +154,12 @@ public class WebViewActivity extends AppCompatActivity {
             editor.putString("load","http://www.amazon.in/");
             editor.putString("cached","Exists");
             editor.commit();
-            Log.v(LOG_TAG,"not yet");
         }
 
 
     }
 
-    private void enableBackgroundService()
+    public void enableBackgroundService()
     {
 
         resultReceiver = new MyResultReceiver(handler);
@@ -162,9 +210,6 @@ public class WebViewActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        if(showToastMessage!=null)
-            showToastMessage.cancel();
-
     }
 
     @Override
@@ -175,6 +220,13 @@ public class WebViewActivity extends AppCompatActivity {
         {
             stopService(intentservice);
         }
+
+        if (receiver != null) {
+            unregisterReceiver(receiver);
+            receiver = null;
+        }
+
+
 
     }
 
@@ -309,6 +361,8 @@ public class WebViewActivity extends AppCompatActivity {
         }
 
     }
+
+
 
 
 }
