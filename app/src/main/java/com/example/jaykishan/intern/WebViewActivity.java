@@ -24,13 +24,11 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
 public class WebViewActivity extends AppCompatActivity {
 
     private WebView webView,duplicateWebView;
     private String webUrl;
-    private Toast showToastMessage;
     private RelativeLayout layout;
     private Context context;
 
@@ -128,7 +126,7 @@ public class WebViewActivity extends AppCompatActivity {
     {
         if(sharedPreferences.contains("cached"))
         {
-            webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
+            webView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 
             // Register and tried to listen to broadcast of network changes
             registerNetworkReceiver();
@@ -262,8 +260,7 @@ public class WebViewActivity extends AppCompatActivity {
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             view.loadUrl(request.getUrl().toString());
             Log.v(LOG_TAG,"Load Started");
-            webView.setVisibility(View.INVISIBLE);
-            return false;
+            return true;
         }
 
 
@@ -271,9 +268,7 @@ public class WebViewActivity extends AppCompatActivity {
         @Override
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             super.onReceivedError(view, request, error);
-//
-//            showToastMessage = Toast.makeText(WebViewActivity.this, error.toString(), Toast.LENGTH_SHORT);
-//            showToastMessage.show();
+
 
         }
 
@@ -292,7 +287,6 @@ public class WebViewActivity extends AppCompatActivity {
             super.onPageFinished(view, url);
             progress.setVisibility(View.GONE);
             //progress.setProgress(100);
-            webView.setVisibility(View.VISIBLE);
             Log.v(LOG_TAG,"PageFinished");
 
         }
@@ -340,9 +334,10 @@ public class WebViewActivity extends AppCompatActivity {
 //                                duplicateWebView.restoreState(resultData);
 
                                 webView.setVisibility(View.INVISIBLE);
+                                webView.destroy();
 
                                 init(duplicateWebView);
-                                duplicateWebView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ONLY);
+                                duplicateWebView.getSettings().setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
 
                                 duplicateWebView.loadUrl(sharedPreferences.getString("load",""));
 
